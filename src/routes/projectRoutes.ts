@@ -28,4 +28,9 @@ body("description").notEmpty().withMessage("La descripción del proyecto es obli
 handleInputErrors,
 ProjectController.updateProject);
 
+router.delete("/:id", 
+param("id").isMongoId().withMessage("Id no válido"),
+handleInputErrors,
+ProjectController.deleteProject);
+
 export default router;
