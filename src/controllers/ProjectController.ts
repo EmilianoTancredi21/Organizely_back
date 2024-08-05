@@ -60,4 +60,24 @@ export class ProjectController {
     }
 
 
+    static deleteProject = async (req: Request, res: Response) => {
+        const {id} = req.params;
+        const project = await Project.findById(id);
+
+        
+        if(!project){
+            const  error = new Error("El proyecto que deseas eliminar no está disponible")
+            return res.status(404).json({error: error.message})
+        }
+
+        await project.deleteOne();
+        res.send("Proyecto eliminado")
+        try {
+            
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+
 }
