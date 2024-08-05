@@ -41,4 +41,23 @@ export class ProjectController {
     }
 
 
+    static updateProject = async (req: Request, res: Response) => {
+        const {id} = req.params;
+        
+        try {
+            const project = await Project.findByIdAndUpdate(id, req.body)
+
+            if(!project){
+                const  error = new Error("El proyecto que deseas buscar no está disponible")
+                return res.status(404).json({error: error.message})
+            }
+
+            await project.save();
+            res.send("Proyeco actualizado correctamente")
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+
 }
