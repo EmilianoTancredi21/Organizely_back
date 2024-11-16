@@ -7,6 +7,9 @@ export class ProjectController {
     static createProject = async (req: Request, res: Response) => {
         const project = new Project(req.body)
 
+                // Asigna un manager
+                project.manager = req.user.id;
+
         try {
             await project.save()
             res.send("Proyecto creado correctamente")
@@ -18,23 +21,33 @@ export class ProjectController {
 
     static getAllProjects = async (req: Request, res: Response) => {
         try {
-            const projects = await Project.find({})
-            res.json(projects)
+            const projects = await Project.find({
+                $or: [
+                    { manager: { $in: req.user.id } },
+                    { team: { $in: req.user.id } }
+                ]
+            });
+            res.json(projects);
         } catch (error) {
             console.log(error);
         }
     }
 
-    static getAllProjectsById = async (req: Request, res: Response) => {
-        const {id} = req.params;
-        
+    static getProjectById = async (req: Request, res: Response) => {
+        const { id } = req.params;
         try {
-            const project = await Project.findById(id)
-            if(!project){
-                const  error = new Error("El proyecto que deseas buscar no está disponible")
-                return res.status(404).json({error: error.message})
+            const project = await Project.findById(id).populate('tasks');
+
+            if (!project) {
+                const error = new Error('Proyecto no encontrado');
+                return res.status(404).json({ error: error.message });
             }
-            res.json(project)
+
+            if (project.manager.toString() !== req.user.id.toString() && !project.team.includes(req.user.id)) {
+                const error = new Error('Acción no válida');
+                return res.status(404).json({ error: error.message });
+            }
+            res.json(project);
         } catch (error) {
             console.log(error);
         }
@@ -42,18 +55,14 @@ export class ProjectController {
 
 
     static updateProject = async (req: Request, res: Response) => {
-        const {id} = req.params;
-        
         try {
-            const project = await Project.findByIdAndUpdate(id, req.body)
+            req.project.projectName = req.body.projectName;
+            req.project.clientName = req.body.clientName;
+            req.project.description = req.body.description;
 
-            if(!project){
-                const  error = new Error("El proyecto que deseas buscar no está disponible")
-                return res.status(404).json({error: error.message})
-            }
+            await req.project.save();
 
-            await project.save();
-            res.send("Proyeco actualizado correctamente")
+            res.send('Proyecto actualizado correctamente');
         } catch (error) {
             console.log(error);
         }
@@ -61,23 +70,14 @@ export class ProjectController {
 
 
     static deleteProject = async (req: Request, res: Response) => {
-        const {id} = req.params;
-        const project = await Project.findById(id);
-
-        
-        if(!project){
-            const  error = new Error("El proyecto que deseas eliminar no está disponible")
-            return res.status(404).json({error: error.message})
-        }
-
-        await project.deleteOne();
-        res.send("Proyecto eliminado")
         try {
-            
+            await req.project.deleteOne();
+            res.send('Proyecto eliminado correctamente');
         } catch (error) {
             console.log(error);
         }
     }
+    
 
 
 }
